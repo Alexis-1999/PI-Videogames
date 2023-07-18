@@ -1,167 +1,201 @@
+const { Videogame, Genre } = require('../db.js');
+const { Op } = require('sequelize');
 const axios = require('axios');
-const { Videogame, Genre } = require('../db');
+const { apiAllCleaner, apiIdCleaner } = require('./utils/utilsGames.js');
+
+// .env
+require('dotenv').config();
 const { API_KEY } = process.env;
 
-// Filtramos los datos
-const infoFilter = (arr) => arr.map(game => {
-  return {
-    id: Videogame.id,
-    name: game.name,
-    description: game.description,
-    platforms: game.platforms.map(platform => platform.platform.name),
-    background_image: game.background_image,
-    genres: game.genres.map(genre => genre.name),
-    released: game.released,
-    rating: game.rating
-  };
-});
 
-// Traer todos los juegos
-const mapData2 = async () => {
-  try {
-    const promises = [];
-    for (let page = 1; page <= 5; page++) {
-      promises.push(axios.get(`https://api.rawg.io/api/games?key=${API_KEY}&page=${page}&page_size=20&ordering=id`));
-    }
-    const responses = await Promise.all(promises);
-    const gameData = responses.flatMap(response => response.data.results);
-    const games = gameData.map(game => {
-      return {
-        id: game.id,
-        name: game.name,
-        description: game.description,
-        platforms: game.platforms.map(platform => platform.platform.name),
-        background_image: game.background_image,
-        genres: game.genres.map(genre => genre.name),
-        released: game.released,
-        rating: game.rating
-      };
-    });
-    console.log(games.length);
-    return games;
-  } catch (error) {
-    throw new Error("Error al obtener todos los juegos");
-  }
+// Posts
+const createGame = async ( name, description, image, releaseDate, rating, genres, parent_platforms ) => {
+    // Crea el juego
+    const newGame = await Videogame.create({ name, description, image, releaseDate, rating, parent_platforms });
+    
+    // Relacione videogames con genres
+    const videoGenre = await newGame.addGenres(genres);
+
+    return videoGenre;
 };
 
-//Traigo los datos de la Base de datos
-const dataDb = async()=>{
-    const userDb = (await Videogame.findAll(
-        {
-            include: {
-                model: Genre,
-                attributes: ["name"],
-                // Para que no aparezca la tabla intermedia o Tabla " detalle "
-                // Dice: De la tabla intermedia(through) que atributos quiero? Ninguno(attributes: [])
-                through: {
-                    attributes: [],
-                },
-            },
-    }))
-    return userDb;
-}
-const getAllGames = async ()=>{
-    const userDb = await dataDb()
-    const mapData = await mapData2()
-    const allGames = userDb.concat(mapData)
-
-    //Unificamos los datos
-    // const gamesApi = infoFilter(infoApi)
-    // console.log(gamesApi);
-    // const allGames = [...mapData, ...userDb]
-    // return [...mapData,...userDb]
-    return allGames
-}
-
-
-
-// Buscar por nombre
-const getGameByName = async(name)=>{
-
-    // CASO PARA EL API
-    // const apiGames = (await axios.get('https://api.rawg.io/api/games?key=29b8690a22c54d81b8ae2364390ae5b9')).data
-
-    // const gamesApi = infoFilter(apiGames)
-
-    const gameName = await getAllGames(name)
-
-    const gameFiltered = gameName.filter(game => game.name.toLowerCase().includes(name.toLowerCase()))
-
-
-    // CASO PARA EL BASE DE DATOS
-    //const gameDb = await Videogame.findAll({where: {name: name}})
-
-
-    // return [...gameFiltered, ...userDb]
-    return gameFiltered;
+// Gets
+const getAllGames = async () => {
+    // Variables 
+    let api = `https://api.rawg.io/api/games?key=${API_KEY}`;
+    let apiGames = [];
     
-}
-
-/*const getGameById = async(id, source)=>{
-    // const infoApi = (await axios.get(`https://api.rawg.io/api/games/${id}?key=29b8690a22c54d81b8ae2364390ae5b9`)).data   mapData2(id)
-    
-    const user = source === "api" ? (await axios.get(`https://api.rawg.io/api/games/${id}?key=${API_KEY}`)).data.results : await Videogame.findByPk(id,
-    // Desde mi búsqueda "getUserId" yo quiero que incluya los post que se hayan creado
-    {
+    // BD
+    const bdGames = await Videogame.findAll({
         include: {
             model: Genre,
-            attributes: ["name"],
-            // Para que no aparezca la tabla intermedia o Tabla " detalle "
-            // Dice: De la tabla intermedia(through) que atributos quiero? Ninguno(attributes: [])
+            as: 'genres', 
+            attributes: [ "id","name" ],
+            through: {
+                // y de la tabla intermedia.....
+                attributes: [],
+            },
+            order: [
+                    ['ASC']
+                ],
+        },
+    });
+    
+    // Api
+    for (let i = 1; i <= 5; i++) { 
+        const dataApi = ( await axios.get( api )).data;    
+        
+        // Filtra los datos de la api para traerlos con el formato de la Db
+        const apiG = apiAllCleaner(dataApi);
+        
+        // Concatena los datos en el array
+        apiGames = apiGames.concat(apiG);
+        
+        // Cambia el valor de la URL por el URL de la pagina siguiente
+        api = dataApi.next;
+    }
+    
+    // Concatena los datos de la api y de la Db
+    return [ ...bdGames, ...apiGames ];
+}
+const getGamesByName = async ( name ) => {
+    // Url
+    const url = `https://api.rawg.io/api/games?search=${name}&key=${API_KEY}`;
+    
+    // BD
+    const bdGame = await Videogame.findAll({
+        where: {
+            name: { [Op.iLike]: `%${name}%` }
+        },
+        include: {
+            model: Genre,
+            as: 'genres', 
+            attributes: [ "id","name" ],
             through: {
                 attributes: [],
             },
+            order: [
+                ['ASC']
+            ],
         },
-    })
-    return user
-
-
-    // const data = await getAllGames(id)
-    // if(id){
-    //     const dataA = data.find((a)=>{ a.id === +id})
-    //     return dataA
-    // }
-
-
-    // const full = data.addGenre(game1)
-
-    // if(!game) throw Error("Videojuego no existe")
-    // return game;
-}*/
-const getGameById = async (id, source) => {
-  if (source === "api") {
-    try {
-      const response = await axios.get(`https://api.rawg.io/api/games/${id}?key=${API_KEY}`);
-      const game = response.data;
-      const filteredGame = infoFilter([game]); // Aplicar el filtro al juego de la API
-      return filteredGame[0]; // Devolver el juego filtrado
-    } catch (error) {
-      throw new Error("Error al obtener los datos de la API");
-    }
-  } else {
-    const game = await Videogame.findByPk(id, {
-      include: {
-        model: Genre,
-        attributes: ["name"],
-        through: {
-          attributes: [],
-        },
-      },
     });
-    return game;
-  }
+    
+    // Api
+    const dataApi = ( await axios.get( url )).data;
+    const apiGames = apiAllCleaner(dataApi);
+    
+    const response = [ ...bdGame, ...apiGames ];
+
+    if( !response.length ){
+        throw Error( `${name} does not exist in the databases` );
+    }  
+    return response ;
+};
+const getGameById = async ( id, source) => {
+    // Url
+    const url = `https://api.rawg.io/api/games/${id}?key=${API_KEY}`;
+    
+    if(source === "api") {
+        const dataApi = ( await axios.get( url )).data;
+        const apiGames = apiIdCleaner(dataApi);
+        return apiGames;
+    } else {
+        const response = await Videogame.findByPk(id, {
+            include: {
+                model: Genre,
+                as: 'genres', 
+                attributes: [ "id","name" ],
+                through: {
+                    attributes: [],
+                },
+                order: [
+                    ['ASC']
+                ],
+            },
+        });
+        if( !response ) throw Error( `not exist` );
+        return response;
+    };
 };
 
 
-const createGameDb =async(name, description, platforms, image, launch_date, rating)=>{
-    return await Videogame.create({name, description, platforms, image, launch_date, rating})
-}
+// Put
+const updateGame = async ( id, name, description, image, releaseDate, rating, genres, parent_platforms ) => {
+    // Comprueba si existe el Juego
+    const game = await Videogame.findByPk( id );
+    if( !game ) throw Error( `The id: ${id} does not exist` );
 
+    // Comprueba si falta algun dato
+    if ( !name || !description || !image || !releaseDate || !rating || !genres || !parent_platforms ) throw Error('Missing Data');
 
+    // Actualiza la tabla de relaciones de generos
+    await game.setGenres( genres );
 
-module.exports = {
-    getGameByName,
+    // Actualiza los datos
+    await Videogame.update(
+        { name, description, image, releaseDate, rating, parent_platforms },
+        {
+            where: { id }
+        }
+    )
+    return `${name} has been updated`;
+};
+
+// Delete
+const deleteGame = async ( id ) => {
+    const gameToDelete = await Videogame.findByPk( id );
+    await gameToDelete.destroy();
+    return `${gameToDelete.name} has been successfully removed`;
+};
+
+module.exports ={
+    createGame,
     getAllGames,
+    getGamesByName,
     getGameById,
-    createGameDb
-}
+    updateGame,
+    deleteGame
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

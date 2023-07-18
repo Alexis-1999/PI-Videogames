@@ -1,48 +1,59 @@
 const { DataTypes } = require('sequelize');
+
 // Exportamos una funcion que define el modelo
 // Luego le injectamos la conexion a sequelize.
-module.exports = (sequelize) => {
+module.exports = ( sequelize ) => {
   // defino el modelo
-  sequelize.define('Videogame', {
-    id: {
-      // type: DataTypes.INTEGER,
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
-      
-      // allowNull: false,
-      // autoIncrement: true,
-      // primaryKey: true,
+  sequelize.define(
+    'Videogame', 
+    {
+      id:{
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+      },
+      name: {
+        type: DataTypes.STRING,
+        unique: true,
+        allowNull: false,
+      },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      parent_platforms: {
+        type: DataTypes.ARRAY(DataTypes.ENUM('Xbox', 'PlayStation', 'PC', 'Android', 'Nintendo')),
+        allowNull: false,
+      },
+      image: {
+        type: DataTypes.STRING,
+        // validate:{
+        //   isUrl: true,
+        // },
+        // defaultValue: 'https://i.blogs.es/7796de/portada-xbox/840_560.jpeg'
+      },
+      releaseDate: {
+        type: DataTypes.DATEONLY,
+        validate:{
+          isDate: true,  
+        },
+        allowNull: false,
+      },
+      rating: {
+        type: DataTypes.FLOAT,
+        validate:{
+          max: 5.0,
+          min: 0,
+        },
+        allowNull: false,
+      },
+      created:{
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
     },
-    
-    name: {
-      type: DataTypes.STRING,
-      allowNull: false,
     },
-
-    description: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-
-    platforms: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-
-    image:{
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-
-    launch_date:{
-      type: DataTypes.DATEONLY,
-      allowNull: false,
-    },
-
-    rating: {
-      type: DataTypes.STRING,
-      allowNull: false,
+    {
+      timestamps: false
     }
-  }, { timestamps: false });
-};
+  );
+}

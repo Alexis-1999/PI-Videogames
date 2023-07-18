@@ -33,23 +33,3 @@ server.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
 });
 
 module.exports = server;
-
-
-//---------------------------------------------------------------------------------------------------------------------
-
-// npm uninstall sequelize
-
-// npm install sequelize
-
-/*const server = require('express').Router()
-const router = require('./routes/index')
-const morgan = require('morgan')
-
-
-server.use(morgan("dev"))
-
-
-server.use('/', router)
-
-
-module.exports = server;*/

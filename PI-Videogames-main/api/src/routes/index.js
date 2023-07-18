@@ -1,18 +1,14 @@
-const { Router } = require("express");
-const {getRouter} = require("./videoGamesRouter")
-const { genreRouter } = require("./genreRouter")
+const { Router } = require('express');
 
-// Importar todos los routers;
-// Ejemplo: const authRouter = require('./auth.js');
-
+// Routers;
+const videogamesRouter = require('./videoGamesRouter')
+const genresRouter = require('./genreRouter')
 
 const router = Router();
 
-// Configurar los routers
-// Ejemplo: router.use('/auth', authRouter);
-router.use("/videogames", getRouter)
-router.use("/genre", genreRouter)
+// Configuracion de los routers
+router.use( '/games', videogamesRouter )
+router.use( '/genres', genresRouter )
 
 
 module.exports = router;
-

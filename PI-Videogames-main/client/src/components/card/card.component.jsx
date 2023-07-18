@@ -1,19 +1,34 @@
-import { Link } from "react-router-dom"
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { platforms } from '../../components/Utils/Platforms';
 import './card.styles.css';
 
-function Card({game}) {
+function Card({ games }) {
+    const { id, name, image, rating, parent_platforms, genres } = games;
+    
+    return(
+        <div id='card'>
+            <Link to={ `/detail/${ id }` } className="linkDetails">
+                <div className='imgCard'>
+                    <img className='img' src={ image } alt={ name } />
+                </div>
+            </Link>
+            <div className='cardInfo'>
+                <section className='cardClose'>
+                    <button value={Math.round(rating)} className='rating'> { rating } </button>
+                    <section className='platform'>
+                        { platforms( parent_platforms ) }
+                    </section>
+                        <h1 className='name'> { name } </h1>
+                </section>
+                <section className='cardOpen'>
+                    <p className='cardGenres'> 
+                        { genres.map(genre => genre.name).join(', ') } 
+                    </p>
+                </section>
+            </div>
+        </div>
+    )
+}
 
-  const { background_image, name, genres, id } = game
-    return (
-      <div className='card-container'> 
-        <Link to={`/home/${id}`}>
-          {/* Aquí voy a colocar los datos del model de base de datos, nombres de los atributos */}
-          <img className="imgCard" src={background_image} alt={name}/>
-          <p>{name}</p>
-          <p>{genres}</p>
-        </Link>
-      </div>
-    );
-  }
-  
-  export default Card;
+export default Card;

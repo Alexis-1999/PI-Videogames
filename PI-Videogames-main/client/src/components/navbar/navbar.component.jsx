@@ -1,20 +1,21 @@
-import React from 'react';
-import './navbar.styles.css';
+import React from 'react'
+import Card from '../../components/card/card.component'
+import Loader from '../../views/loader/loader'
+import './navbar.styles.css'
 
-function Navbar({ handleChange, handleSubmit }) {
-  // const handleSearchSubmit = (e) => {
-  //   e.preventDefault();
-  //   handleSubmit();
-  // };
+const SearchVideogame = ({ videogames }) => {
 
   return (
-    <div className="search-box">
-      {/* <form onSubmit={handleSearchSubmit}> */}
-        <input placeholder="Búsqueda" type="search" onChange={handleChange} />
-        <button onClick={handleSubmit} type="submit">Buscar</button>
-      {/* </form> */}
-    </div>
-  );
+      <div id="searchVideogame">
+          {
+              videogames.length > 0 
+                  ? videogames.map( ( game, i ) => ( 
+                          <Card games={ game } key={ i }/> 
+                  ))
+                  : <Loader/>
+          }
+      </div>
+  )
 }
 
-export default Navbar;
+export default SearchVideogame

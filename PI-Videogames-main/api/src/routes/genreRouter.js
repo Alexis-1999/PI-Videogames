@@ -1,11 +1,23 @@
 const { Router } = require("express");
-const { getGenreHandlers } = require("../handlers/genreHandlers")
+const { apiGenresHandler, createGenreHandler, getGenresHandler, getGenreHandler, PutGenreHandler, deleteGenreHandler } = require("../handlers/genreHandlers");
 
-const genreRouter = Router();
+const genresRouter = Router();
+
+// Post 
+genresRouter.post( '/api', apiGenresHandler );
+genresRouter.post( '/', createGenreHandler );
 
 
-genreRouter.get("/", getGenreHandlers)
+// Gets
+genresRouter.get( '/', getGenresHandler );
+genresRouter.get("/:id", getGenreHandler );
 
-module.exports = {
-    genreRouter
-}
+
+// Put
+genresRouter.put( '/:id', PutGenreHandler );
+
+// Delete
+genresRouter.delete( '/delete/:id', deleteGenreHandler );
+
+
+module.exports = genresRouter;

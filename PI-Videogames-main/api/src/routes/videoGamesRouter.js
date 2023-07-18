@@ -1,13 +1,26 @@
-const { Router } = require("express")
-const { getGamesHandlers, getDetailHandler, createGamesHandler } = require("../handlers/gamesHandlers")
+const { Router } = require("express");
+const { 
+    createGameHandler, 
+    getGamesHandler, 
+    getGameHandler, 
+    putGameHandler, 
+    deleteGameHandler  
+} = require("../handlers/gamesHandlers");
 
-const getRouter = Router()
+const videogamesRouter = Router();
 
-getRouter.get("/", getGamesHandlers)
-getRouter.get("/:id", getDetailHandler)
-getRouter.post("/", createGamesHandler)
+// Post 
+videogamesRouter.post( '/', createGameHandler );
 
-module.exports={
-    getRouter
-}
+// Gets
+videogamesRouter.get( '/', getGamesHandler );
+videogamesRouter.get("/:id", getGameHandler );
 
+
+// Put
+videogamesRouter.put( '/:id', putGameHandler );
+
+// Delete
+videogamesRouter.delete( '/delete/:id', deleteGameHandler );
+
+module.exports = videogamesRouter;
